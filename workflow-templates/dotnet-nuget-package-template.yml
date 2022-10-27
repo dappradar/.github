@@ -9,6 +9,9 @@ on:
       project-path:
         required: true
         type: string
+    secrets:
+      token:
+        required: true
 
 jobs:
   reusable-nuget-build-test-push:
