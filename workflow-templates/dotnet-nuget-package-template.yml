@@ -1,0 +1,84 @@
+name: Nuget build and push
+
+on:
+  workflow_call:
+    inputs:
+      solution-path:
+        required: true
+        type: string
+      project-path:
+        required: true
+        type: string
+
+jobs:
+  reusable-nuget-build-test-push:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    env:
+      SOLUTION_PATH: ${{ inputs.solution-path }}
+      PROJECT_PATH: ${{ inputs.project-path }}
+      PACKAGE_OUTPUT_DIR: packed
+    steps:
+      # We need to use env in which we have dotnet installed that is why we use a env that is in
+      # github that has that and it is actions/setup-dotnet@v2 where we can define which version
+      # of dotnet we need in out case 6
+      - uses: actions/checkout@v3
+      - name: Setup dotnet env
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+          source-url: https://nuget.pkg.github.com/dappradar/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          
+      # Generate version that we can use afterwards in ECR and k8s for better understanding of timestamp
+      # and build so we can track easily when the image was build. Current format for versioning is:
+      # YY.mm.DD-{{github.run_number}}
+      - name: Generate version
+        id: vars
+        run: echo "tag_version=$(date +'%y.%m.%d')-${{github.run_number}}" >> $GITHUB_OUTPUT
+
+      - name: Restore
+        run: dotnet restore $SOLUTION_PATH
+
+      - name: Build
+        run: dotnet build $SOLUTION_PATH --no-restore /p:Version=${{ steps.vars.outputs.tag_version }}
+
+      - name: Test
+        run: dotnet test $SOLUTION_PATH --logger "trx;LogFileName=test-results.trx" --results-directory "TestResults" --no-restore
+
+      - name: Upload dotnet test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: dotnet-results-6
+          path: TestResults
+        # Use always() to always run this step to publish test results when there are test failures
+        if: ${{ always() }}
+
+      - name: Test reporter
+        uses: dorny/test-reporter@v1.6.0
+        with:
+          name: Test run for ${{ steps.vars.outputs.tag_version }}
+          path: TestResults/test-results.trx
+          reporter: dotnet-trx
+          fail-on-error: true
+
+        
+      # For better visibility in git we push tags that describe the version this way when we open some
+      # git tool we can see at which commit that tag/version is created and see if we miss some feature
+      # for the particular version
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@master
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CUSTOM_TAG: ${{ steps.vars.outputs.tag_version }}
+      
+      - name: Pack
+        run: dotnet pack $PROJECT_PATH -p:PackageVersion=${{ steps.vars.outputs.tag_version }} --output $PACKAGE_OUTPUT_DIR --configuration Release
+      
+      - name: Debug list packaged files
+        run: ls $PACKAGE_OUTPUT_DIR/
+
+      - name: Publish nuget package
+        run: dotnet nuget push $PACKAGE_OUTPUT_DIR/*.nupkg
+
