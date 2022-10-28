@@ -1,0 +1,41 @@
+name: Create nugetfile with proper credentials
+
+on:
+  workflow_call:
+    inputs:
+      nuget-user:
+        required: true
+        type: string
+      nuget-token:
+        required: true
+        type: string
+      nuget-source:
+        required: true
+        type: string
+      dotnet-version:
+        required: true
+        type: string
+
+jobs:
+  reusable-nugetconfig-generation:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup dotnet env
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{inputs.dotnet-version}}
+          
+      - name: Generate nuget file
+        run: dotnet nugetconfig
+
+      - name: Setup nuget source
+        run: dotnet nuget add source ${{ inputs.nuget-source }} -n github -u ${{ inputs.nuget-user }} -p ${{ inputs.nuget-token }} --store-password-in-clear-text --configfile nuget.config
+
+      - name: List soruces for nuget
+        run: dotnet nuget list source
+
+      - name: cat nuget.config
+        run: cat nuget.config
+
