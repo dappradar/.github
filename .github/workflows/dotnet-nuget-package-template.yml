@@ -9,7 +9,7 @@ on:
       project-path:
         required: true
         type: string
-      file-to-download:
+      nugetnugetfile-to-download:
         required: false
         type: string
 
@@ -43,13 +43,13 @@ jobs:
 
       - uses: actions/download-artifact@v2
         name: Download nuget
-        if: ${{inputs.file-to-download}} != null
+        if: ${{inputs.nugetfile-to-download}} != null
         with:
-          name: ${{inputs.file-to-download}}
+          name: ${{inputs.nugetfile-to-download}}
       
       - name: Log files
-        if: ${{inputs.file-to-download}} != null
-        run: ls 
+        if: ${{inputs.nugetfile-to-download}} != null
+        run: cat nuget.config
 
       - name: Restore
         run: dotnet restore $SOLUTION_PATH
@@ -89,6 +89,10 @@ jobs:
       - name: Pack
         run: dotnet pack $PROJECT_PATH -p:PackageVersion=${{ steps.vars.outputs.tag_version }} --output $PACKAGE_OUTPUT_DIR --configuration Release
       
+      - name: Remove nuget config if there is such
+        if: ${{inputs.nugetfile-to-download}} != null
+        run: rm nuget.config
+
       - name: Debug list packaged files
         run: ls $PACKAGE_OUTPUT_DIR/
 
