@@ -9,7 +9,7 @@ on:
       project-path:
         required: true
         type: string
-      nugetnugetfile-to-download:
+      nugetfile-to-download:
         required: false
         type: string
 
