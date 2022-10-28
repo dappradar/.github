@@ -9,6 +9,9 @@ on:
       project-path:
         required: true
         type: string
+      file-to-download:
+        required: false
+        type: string
 
 jobs:
   reusable-nuget-build-test-push:
@@ -37,6 +40,16 @@ jobs:
       - name: Generate version
         id: vars
         run: echo "tag_version=$(date +'%y.%m.%d')-${{github.run_number}}" >> $GITHUB_OUTPUT
+
+      - uses: actions/download-artifact@v2
+        name: Download nuget
+        if: ${{inputs.file-to-download}} != null
+        with:
+          name: ${{inputs.file-to-download}}
+      
+      - name: Log files
+        if: ${{inputs.file-to-download}} != null
+        run: ls 
 
       - name: Restore
         run: dotnet restore $SOLUTION_PATH
