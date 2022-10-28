@@ -22,7 +22,7 @@ jobs:
           dotnet-version: ${{inputs.dotnet-version}}
           
       - name: Generate nuget file
-        run: dotnet nugetconfig
+        run: dotnet new nugetconfig
 
       - name: Setup nuget source
         run: dotnet nuget add source ${{ inputs.nuget-source }} -n github -u ${{ secrets.GH_USER_NAME }} -p ${{ secrets.GH_TOKEN }} --store-password-in-clear-text --configfile nuget.config
@@ -32,4 +32,9 @@ jobs:
 
       - name: cat nuget.config
         run: cat nuget.config
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: nugetconfig
+          path: nuget.config
 
