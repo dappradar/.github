@@ -1,4 +1,4 @@
-name: Price Public API Build image and send to ECR
+name: Build image and send to ECR
 
 on:
   workflow_call:
