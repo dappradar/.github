@@ -10,6 +10,10 @@ on:
         required: false
         type: string
         default: ''
+      run-tests:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   build-and-push-image-to-ECR:
@@ -39,6 +43,33 @@ jobs:
       - name: Log files
         if: ${{inputs.nugetfile-to-download != ''}} 
         run: cat nuget.config
+
+      - name: Restore solution
+        run: dotnet restore
+
+      - name: Build solution
+        run: dotnet build --no-restore
+
+      - name: Test
+        run: dotnet test --logger "trx;LogFileName=test-results.trx" --results-directory "TestResults" --no-restore
+        if: ${{inputs.run-tests}}
+
+      - name: Upload dotnet test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: dotnet-results-6
+          path: TestResults
+        # Use always() to always run this step to publish test results when there are test failures
+        if: ${{ inputs.run-tests && always() }}
+
+      - name: Test reporter
+        uses: dorny/test-reporter@v1.6.0
+        if: ${{inputs.run-tests}}
+        with:
+          name: Test run for ${{ steps.vars.outputs.tag_version }}
+          path: TestResults/test-results.trx
+          reporter: dotnet-trx
+          fail-on-error: true
 
       - name: Bump version and push tag
         uses: anothrNick/github-tag-action@master
