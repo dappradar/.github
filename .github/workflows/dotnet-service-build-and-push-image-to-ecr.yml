@@ -1,0 +1,68 @@
+name: Price Public API Build image and send to ECR
+
+on:
+  workflow_call:
+    inputs:
+      dockerfile-path:
+        required: true
+        type: string
+      nugetfile-to-download:
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  build-and-push-image-to-ECR:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup dotnet env
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Generate version for GH and ECR images tags
+        id: vars
+        run: echo "::set-output name=tag_version::$(date +'%y.%m.%d')-${{github.run_number}}"
+
+      - uses: actions/download-artifact@v2
+        name: Download nuget
+        if: ${{inputs.nugetfile-to-download != ''}}
+        with:
+          name: ${{inputs.nugetfile-to-download}}
+          
+      - name: List soruces for nuget
+        if: ${{inputs.nugetfile-to-download != ''}} 
+        run: dotnet nuget list source
+      
+      - name: Log files
+        if: ${{inputs.nugetfile-to-download != ''}} 
+        run: cat nuget.config
+
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@master
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          CUSTOM_TAG: ${{ steps.vars.outputs.tag_version }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        run: |
+          docker build -t "${{ secrets.ECR_REGISTRY }}:${{ steps.vars.outputs.tag_version }}" -t "${{ secrets.ECR_REGISTRY }}:latest" -f ${{dockerfile-path}} .
+          docker image push --all-tags "${{ secrets.ECR_REGISTRY }}"
+          
+      - name: Remove nuget config if there is such
+        if: ${{inputs.nugetfile-to-download != ''}}
+        run: rm nuget.config
+
