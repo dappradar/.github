@@ -44,7 +44,7 @@ jobs:
       # YY.mm.DD-{{github.run_number}}
       - name: Generate version
         id: vars
-        run: echo "tag_version=$(date +'%y.%m.%d')-${{github.run_number}}" >> $GITHUB_OUTPUT
+        run: echo "tag_version=$(date +'%y.%m.%d').${{github.run_number}}" >> $GITHUB_OUTPUT
 
       - uses: actions/download-artifact@v2
         name: Download nuget
