@@ -90,7 +90,7 @@ jobs:
 
       - name: Build, tag, and push image to Amazon ECR
         run: |
-          docker build -t "${{ secrets.ECR_REGISTRY }}:${{ steps.vars.outputs.tag_version }}" -t "${{ secrets.ECR_REGISTRY }}:latest" -f ${{dockerfile-path}} .
+          docker build -t "${{ secrets.ECR_REGISTRY }}:${{ steps.vars.outputs.tag_version }}" -t "${{ secrets.ECR_REGISTRY }}:latest" -f ${{inputs.dockerfile-path}} .
           docker image push --all-tags "${{ secrets.ECR_REGISTRY }}"
           
       - name: Remove nuget config if there is such
