@@ -17,7 +17,7 @@ on:
 
 jobs:
   build-and-push-image-to-ECR:
-    runs-on: ubuntu-latest
+    runs-on: dappradar-runner
     permissions: write-all
     steps:
       - uses: actions/checkout@v3
