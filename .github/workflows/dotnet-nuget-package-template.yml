@@ -20,7 +20,8 @@ on:
 
 jobs:
   reusable-nuget-build-test-push:
-    runs-on: dappradar-runner
+    #runs-on: dappradar-runner
+    runs-on: ubuntu-latest
     permissions: write-all
     env:
       SOLUTION_PATH: ${{ inputs.solution-path }}

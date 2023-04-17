@@ -12,7 +12,8 @@ on:
 
 jobs:
   reusable-nugetconfig-generation:
-    runs-on: dappradar-runner
+      #runs-on: dappradar-runner
+    runs-on: ubuntu-latest
     permissions: write-all
     steps:
       - uses: actions/checkout@v3
