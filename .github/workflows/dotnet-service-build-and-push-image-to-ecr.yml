@@ -17,16 +17,29 @@ on:
 
 jobs:
   build-and-push-image-to-ECR:
-      #runs-on: dappradar-runner
-    runs-on: ubuntu-latest
+    runs-on: dappradar-runner
+    # runs-on: ubuntu-latest
     permissions: write-all
     steps:
       - uses: actions/checkout@v3
+
+      - name: Test version (BEFORE)
+        run: |
+          dotnet --version
+          which dotnet
+
       - name: Setup dotnet env
-        uses: actions/setup-dotnet@v2
+        uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
+        env:
+          DOTNET_INSTALL_DIR: "~/dotnet"
 
+      - name: Test version (AFTER)
+        run: |
+          dotnet --version
+          which dotnet
+          
       - name: Generate version for GH and ECR images tags
         id: vars
         run: echo "::set-output name=tag_version::$(date +'%y.%m.%d')-${{github.run_number}}"

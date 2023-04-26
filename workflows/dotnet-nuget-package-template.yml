@@ -15,8 +15,8 @@ on:
 
 jobs:
   reusable-nuget-build-test-push:
-      #runs-on: dappradar-runner
-    runs-on: ubuntu-latest
+    runs-on: dappradar-runner
+    #runs-on: ubuntu-latest
     permissions: write-all
     env:
       SOLUTION_PATH: ${{ inputs.solution-path }}
@@ -27,13 +27,25 @@ jobs:
       # github that has that and it is actions/setup-dotnet@v2 where we can define which version
       # of dotnet we need in out case 6
       - uses: actions/checkout@v3
+
+      - name: Test version (BEFORE)
+        run: |
+          dotnet --version
+          which dotnet
+
       - name: Setup dotnet env
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
           source-url: https://nuget.pkg.github.com/dappradar/index.json
         env:
+          DOTNET_INSTALL_DIR: "~/dotnet"
           NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+      - name: Test version (AFTER)
+        run: |
+          dotnet --version
+          which dotnet
           
       # Generate version that we can use afterwards in ECR and k8s for better understanding of timestamp
       # and build so we can track easily when the image was build. Current format for versioning is:
